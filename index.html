@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>British Wi-Fi Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #search-container {
+            margin-top: 100px;
+        }
+        #search-input {
+            width: 300px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #game-container {
+            margin-top: 50px;
+        }
+        canvas {
+            border: 2px solid black;
+        }
+        #game-over {
+            margin-top: 20px;
+        }
+        footer {
+            margin-top: 50px;
+            font-size: 12px;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+    <div id="search-container">
+        <h1>Great British Search</h1>
+        <input type="text" id="search-input" placeholder="Search the web...">
+        <button>Search</button>
+    </div>
+    <div id="game-container" style="display: none;">
+        <h2>Papers Please</h2>
+        <p>Survive for 5 minutes to prove you're not a minor!</p>
+        <canvas id="game-canvas" width="400" height="600"></canvas>
+        <p id="score">Score: 0</p>
+        <div id="game-over" style="display: none;">
+            <h2 id="game-over-message"></h2>
+            <button onclick="location.reload()">Try Again</button>
+        </div>
+    </div>
+    <footer>Powered by the Ministry of Internet Safety</footer>
+    <script>
+        // Search logic
+        let sequence = "pornhub";
+        let currentIndex = 0;
+        document.getElementById("search-input").addEventListener("keydown", function(event) {
+            event.preventDefault();
+            if (currentIndex < sequence.length) {
+                this.value += sequence[currentIndex];
+                currentIndex++;
+                if (currentIndex === sequence.length) {
+                    startGame();
+                }
+            }
+        });
+
+        // Game logic
+        let canvas, ctx, player, papers, score, startTime, gameOver, spawnInterval;
+        function startGame() {
+            document.getElementById("search-container").style.display = "none";
+            document.getElementById("game-container").style.display = "block";
+            canvas = document.getElementById("game-canvas");
+            ctx = canvas.getContext("2d");
+            player = { x: 175, y: 550, width: 50, height: 50, speed: 5 };
+            papers = [];
+            score = 0;
+            startTime = Date.now();
+            gameOver = false;
+            spawnInterval = setInterval(spawnPaper, 300);
+            document.addEventListener("keydown", handleKeyDown);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnPaper() {
+            if (gameOver) return;
+            let paper = { x: Math.random() * (canvas.width - 40), y: 0, width: 40, height: 20, speed: 3 + Math.random() * 4 };
+            papers.push(paper);
+        }
+
+        function handleKeyDown(event) {
+            if (gameOver) return;
+            if (event.key === "ArrowLeft") {
+                player.x -= player.speed;
+                if (player.x < 0) player.x = 0;
+            } else if (event.key === "ArrowRight") {
+                player.x += player.speed;
+                if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            }
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
+            let currentTime = Date.now();
+            let elapsed = (currentTime - startTime) / 1000;
+            if (elapsed >= 300) {
+                endGame(true);
+                return;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "blue";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            for (let i = papers.length - 1; i >= 0; i--) {
+                let paper = papers[i];
+                paper.y += paper.speed;
+                if (paper.y > canvas.height) {
+                    papers.splice(i, 1);
+                    score++;
+                    document.getElementById("score").textContent = "Score: " + score;
+                } else {
+                    if (
+                        paper.x < player.x + player.width &&
+                        paper.x + paper.width > player.x &&
+                        paper.y < player.y + player.height &&
+                        paper.y + paper.height > player.y
+                    ) {
+                        endGame(false);
+                        return;
+                    }
+                    ctx.fillStyle = "red";
+                    ctx.fillRect(paper.x, paper.y, paper.width, paper.height);
+                }
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame(win) {
+            gameOver = true;
+            clearInterval(spawnInterval);
+            let message = win ? "Congratulations! You survived and proved you're not a minor." : "Game Over! You failed to prove your age.";
+            document.getElementById("game-over-message").textContent = message;
+            document.getElementById("game-over").style.display = "block";
+        }
+    </script>
+</body>
+</html>
